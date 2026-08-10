@@ -55,58 +55,127 @@ export async function createConversation(data: {
     new Set([data.userId, ...data.participantIds])
   );
 
+  const name =
+    data.name?.trim() || undefined;
+
+  const description =
+    data.description?.trim() || undefined;
+
   // DIRECT chat rule
   if (data.type === "DIRECT") {
     if (allParticipants.length !== 2) {
-      throw new Error("Direct chat must have exactly 2 users");
+      throw new Error(
+        "Direct chat must have exactly 2 users"
+      );
     }
 
-    const existing = await prisma.conversation.findFirst({
-      where: {
-        type: "DIRECT",
-        participants: {
-          every: {
-            userId: { in: allParticipants },
-          },
+    const existing =
+      await prisma.conversation.findFirst({
+        where: {
+          type: "DIRECT",
+
+          AND: [
+            {
+              participants: {
+                every: {
+                  userId: {
+                    in: allParticipants,
+                  },
+                },
+              },
+            },
+            {
+              participants: {
+                some: {
+                  userId: allParticipants[0],
+                },
+              },
+            },
+            {
+              participants: {
+                some: {
+                  userId: allParticipants[1],
+                },
+              },
+            },
+          ],
         },
-      },
-      select: {
-        id: true,
-      },
-    });
+
+        select: {
+          id: true,
+        },
+      });
 
     if (existing) {
       return prisma.conversation.findUnique({
-        where: { id: existing.id },
+        where: {
+          id: existing.id,
+        },
         select: conversationSelect,
       });
+    }
+  }
+
+  // GROUP chat rule
+  if (data.type === "GROUP") {
+    if (!name) {
+      throw new Error(
+        "Group name is required."
+      );
+    }
+
+    if (allParticipants.length < 3) {
+      throw new Error(
+        "A group must have at least 3 members."
+      );
     }
   }
 
   return prisma.conversation.create({
     data: {
       type: data.type,
-      name: data.name,
-      description: data.description,
+      name,
+      description,
+
       participants: {
         create: allParticipants.map((id) => ({
           userId: id,
-          role: id === data.userId ? "OWNER" : "MEMBER",
+          role:
+            id === data.userId
+              ? "OWNER"
+              : "MEMBER",
         })),
       },
     },
+
     select: conversationSelect,
   });
 }
 
 /** Get all conversations for a user */
-export async function getUserConversations(userId: string) {
+export async function getUserConversations(
+  userId: string
+) {
   return prisma.conversation.findMany({
     where: {
       participants: {
-        some: { userId },
+        some: {
+          userId,
+        },
       },
+
+      OR: [
+        {
+          type: "GROUP",
+        },
+        {
+          messages: {
+            some: {},
+          },
+        },
+      ],
     },
+
     select: {
       id: true,
       type: true,
@@ -124,8 +193,11 @@ export async function getUserConversations(userId: string) {
       },
 
       messages: {
-        orderBy: { createdAt: "desc" },
+        orderBy: {
+          createdAt: "desc",
+        },
         take: 1,
+
         select: {
           id: true,
           content: true,
@@ -137,6 +209,7 @@ export async function getUserConversations(userId: string) {
         },
       },
     },
+
     orderBy: {
       createdAt: "desc",
     },
@@ -148,77 +221,88 @@ export async function getConversationById(
   conversationId: string,
   userId: string
 ) {
-  const conversation = await prisma.conversation.findFirst({
-    where: {
-      id: conversationId,
-      participants: {
-        some: { userId },
-      },
-    },
-    select: {
-      id: true,
-      type: true,
-      name: true,
-      description: true,
-      createdAt: true,
+  const conversation =
+    await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
 
-      participants: {
-        select: {
-          role: true,
-          user: {
-            select: safeUserSelect,
+        participants: {
+          some: {
+            userId,
           },
         },
       },
 
-      messages: {
-        orderBy: { createdAt: "asc" },
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
+      select: {
+        id: true,
+        type: true,
+        name: true,
+        description: true,
+        createdAt: true,
 
-          sender: {
-            select: safeSenderSelect,
+        participants: {
+          select: {
+            role: true,
+
+            user: {
+              select: safeUserSelect,
+            },
+          },
+        },
+
+        messages: {
+          orderBy: {
+            createdAt: "asc",
           },
 
-          media: {
-            select: {
-              id: true,
-              media: {
-                select: {
-                  id: true,
-                  url: true,
-                  type: true,
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+
+            sender: {
+              select: safeSenderSelect,
+            },
+
+            media: {
+              select: {
+                id: true,
+
+                media: {
+                  select: {
+                    id: true,
+                    url: true,
+                    type: true,
+                  },
                 },
               },
             },
-          },
 
-          reactions: {
-            select: {
-              id: true,
-              emoji: true,
-              userId: true,
+            reactions: {
+              select: {
+                id: true,
+                emoji: true,
+                userId: true,
+              },
             },
-          },
 
-          readReceipts: {
-            select: {
-              id: true,
-              userId: true,
-              readAt: true,
+            readReceipts: {
+              select: {
+                id: true,
+                userId: true,
+                readAt: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    });
 
   if (!conversation) {
-    throw new Error("Conversation not found");
+    throw new Error(
+      "Conversation not found"
+    );
   }
 
   return conversation;
 }
-
