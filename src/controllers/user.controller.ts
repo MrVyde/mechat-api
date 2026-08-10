@@ -28,3 +28,30 @@ export async function searchUsers(
     });
   }
 }
+
+export async function updateProfile(
+  req: Request,
+  res: Response
+) {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const user =
+      await userService.updateProfile(
+        userId,
+        req.body
+      );
+
+    return res.json(user);
+  } catch (err: any) {
+    return res.status(400).json({
+      message: err.message,
+    });
+  }
+}

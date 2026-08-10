@@ -8,8 +8,10 @@ const safeUserSelect = {
 
   profile: {
     select: {
+      id: true,
       displayName: true,
       avatarId: true,
+      bio: true,
     },
   },
 } as const;
@@ -59,13 +61,30 @@ export async function searchUsers(
   });
 }
 
-export async function updateProfile(userId: string, data: {
-  displayName?: string;
-  bio?: string;
-  avatarId?: string;
-}) {
-  return prisma.profile.update({
-    where: { userId },
-    data,
+export async function updateProfile(
+  userId: string,
+  data: {
+    displayName: string;
+    bio?: string;
+  }
+) {
+  const displayName = data.displayName.trim();
+  const bio = data.bio?.trim() || null;
+
+  await prisma.profile.update({
+    where: {
+      userId,
+    },
+    data: {
+      displayName,
+      bio,
+    },
+  });
+
+  return prisma.user.findUniqueOrThrow({
+    where: {
+      id: userId,
+    },
+    select: safeUserSelect,
   });
 }
