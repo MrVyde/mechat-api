@@ -51,6 +51,11 @@ export async function register(data: {
           displayName: true,
           bio: true,
           avatarId: true,
+          avatar: {
+            select: {
+              url: true,
+            },
+          },
         },
       },
     },
@@ -92,6 +97,11 @@ export async function login(data: {
           displayName: true,
           bio: true,
           avatarId: true,
+          avatar: {
+            select: {
+              url: true,
+            },
+          },
         },
       },
     },
@@ -139,6 +149,11 @@ export async function getUserById(userId: string) {
           displayName: true,
           bio: true,
           avatarId: true,
+          avatar: {
+            select: {
+              url: true,
+            },
+          },
         },
       },
     },
