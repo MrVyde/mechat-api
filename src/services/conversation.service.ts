@@ -1,9 +1,12 @@
 import { prisma } from "../lib/prisma";
 
-/** Reusable safe user shape (inline concept, not constant) */
+/** Fields safe to expose for a user. */
 const safeUserSelect = {
   id: true,
   username: true,
+  isOnline: true,
+  lastSeenAt: true,
+
   profile: {
     select: {
       displayName: true,

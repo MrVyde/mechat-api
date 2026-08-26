@@ -1,9 +1,11 @@
 import { prisma } from "../lib/prisma";
 
-
 const safeUserSelect = {
   id: true,
   username: true,
+  isOnline: true,
+  lastSeenAt: true,
+
   profile: {
     select: {
       displayName: true,
