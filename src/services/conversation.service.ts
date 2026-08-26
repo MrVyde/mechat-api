@@ -159,63 +159,75 @@ export async function createConversation(data: {
 export async function getUserConversations(
   userId: string
 ) {
-  return prisma.conversation.findMany({
-    where: {
-      participants: {
-        some: {
-          userId,
-        },
-      },
-
-      OR: [
-        {
-          type: "GROUP",
-        },
-        {
-          messages: {
-            some: {},
+  const conversations =
+    await prisma.conversation.findMany({
+      where: {
+        participants: {
+          some: {
+            userId,
           },
         },
-      ],
-    },
 
-    select: {
-      id: true,
-      type: true,
-      name: true,
-      description: true,
-      createdAt: true,
+        OR: [
+          {
+            type: "GROUP",
+          },
+          {
+            messages: {
+              some: {},
+            },
+          },
+        ],
+      },
 
-      participants: {
-        select: {
-          role: true,
-          user: {
-            select: safeUserSelect,
+      select: {
+        id: true,
+        type: true,
+        name: true,
+        description: true,
+        createdAt: true,
+
+        participants: {
+          select: {
+            role: true,
+            user: {
+              select: safeUserSelect,
+            },
+          },
+        },
+
+        messages: {
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 1,
+
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+
+            sender: {
+              select: safeSenderSelect,
+            },
           },
         },
       },
+    });
 
-      messages: {
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 1,
+  return conversations.sort((a, b) => {
+    const aLatest =
+      a.messages[0]?.createdAt ??
+      a.createdAt;
 
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
+    const bLatest =
+      b.messages[0]?.createdAt ??
+      b.createdAt;
 
-          sender: {
-            select: safeSenderSelect,
-          },
-        },
-      },
-    },
-
-    orderBy: {
-      createdAt: "desc",
-    },
+    return (
+      new Date(bLatest).getTime() -
+      new Date(aLatest).getTime()
+    );
   });
 }
 

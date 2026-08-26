@@ -71,7 +71,31 @@ export async function sendMessage(
     },
   });
 
-  io?.to(data.conversationId).emit("message:new", message);
+  const participants =
+    await prisma.conversationParticipant.findMany({
+      where: {
+        conversationId: data.conversationId,
+      },
+      select: {
+        userId: true,
+      },
+    });
+
+  // Active conversation room
+  io?.to(data.conversationId).emit(
+    "message:new",
+    message
+  );
+
+  // User rooms — used to update conversation sidebars
+  for (const participant of participants) {
+    const room = participant.userId;
+
+    io?.to(room).emit(
+      "conversation:updated",
+      message
+    );
+  }
 
   return message;
 }
