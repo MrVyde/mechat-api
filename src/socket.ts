@@ -7,67 +7,138 @@ import { JWT_SECRET } from "./config/env";
 export function initSocket(server: http.Server) {
   const io = new Server(server, {
     cors: {
-      origin: "*", // adjust later for production
+      origin: "http://localhost:3000", // adjust later for production
       methods: ["GET", "POST"],
+      credentials: true
     },
   });
 
   // store online users in memory
-  const onlineUsers = new Map<string, string>(); 
-  // userId -> socketId
+    const onlineUsers = new Map<
+    string,
+    Set<string>
+  >();
+  // userId -> active socket IDs
+
 
   io.use((socket, next) => {
     try {
-      const token = socket.handshake.auth?.token;
+      const cookieHeader =
+        socket.handshake.headers.cookie;
 
-      if (!token) {
-        return next(new Error("No token provided"));
+      if (!cookieHeader) {
+        return next(
+          new Error("Unauthorized")
+        );
       }
 
-      const decoded = jwt.verify(token, JWT_SECRET) as {
+      const cookies = Object.fromEntries(
+        cookieHeader
+          .split(";")
+          .map((cookie) => {
+            const [key, ...value] =
+              cookie.trim().split("=");
+
+            return [
+              key,
+              decodeURIComponent(
+                value.join("=")
+              ),
+            ];
+          })
+      );
+
+      const token =
+        cookies.accessToken;
+
+      if (!token) {
+        return next(
+          new Error("Unauthorized")
+        );
+      }
+
+      const decoded = jwt.verify(
+        token,
+        JWT_SECRET
+      ) as {
         userId: string;
       };
 
-      socket.data.userId = decoded.userId;
+      socket.data.userId =
+        decoded.userId;
+
       next();
-    } catch (err) {
-      next(new Error("Unauthorized"));
+    } catch {
+      next(
+        new Error("Unauthorized")
+      );
     }
   });
 
-  io.on("connection", (socket) => {
-    const userId = socket.data.userId;
 
-    console.log("User connected:", userId);
+  io.on("connection", async (socket) => {
+  const userId = socket.data.userId;
 
-    // mark user online
-    onlineUsers.set(userId, socket.id);
+// Personal room for user-specific events
+  await socket.join(userId);
 
-    io.emit("user:online", { userId });
+  const userSockets =
+    onlineUsers.get(userId) ?? new Set();
 
-     // JOIN conversation room
-    socket.on("conversation:join", (conversationId: string) => {
-        socket.join(conversationId);
-        console.log(`${userId} joined room ${conversationId}`);
+  const wasOffline = userSockets.size === 0;
+
+  userSockets.add(socket.id);
+
+  // mark user online
+  onlineUsers.set(userId, userSockets);
+
+  socket.emit("presence:sync", {
+    onlineUserIds: [...onlineUsers.keys()],
+  });
+
+  if (wasOffline) {
+    socket.broadcast.emit("user:online", {
+      userId,
     });
+  }
 
-    // LEAVE conversation room
-    socket.on("conversation:leave", (conversationId: string) => {
-        socket.leave(conversationId);
-        console.log(`${userId} left room ${conversationId}`);
-    });
+  // JOIN conversation room
+  socket.on(
+    "conversation:join",
+    (conversationId: string) => {
+      socket.join(conversationId);
+    }
+  );
 
-    socket.on("disconnect", async () => {
-      console.log("User disconnected:", userId);
+  // LEAVE conversation room
+  socket.on(
+    "conversation:leave",
+    (conversationId: string) => {
+      socket.leave(conversationId);
+    }
+  );
 
-      onlineUsers.delete(userId);
+  socket.on("disconnect", () => {
+    const sockets = onlineUsers.get(userId);
 
-      io.emit("user:offline", {
-        userId,
-        lastSeenAt: new Date(),
-      });
+    if (!sockets) {
+      return;
+    }
+
+    sockets.delete(socket.id);
+
+    if (sockets.size > 0) {
+      return;
+    }
+
+    onlineUsers.delete(userId);
+
+    io.emit("user:offline", {
+      userId,
+      lastSeenAt: new Date().toISOString(),
     });
   });
+});
 
   return {
     io,
