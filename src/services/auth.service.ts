@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
-import { JWT_SECRET } from "../config/env";
+import { JWT_SECRET, DEMO_USERNAME } from "../config/env";
 
 
 
@@ -127,6 +127,52 @@ export async function login(data: {
   );
 
   const { passwordHash, ...safeUser } = user;
+
+  return {
+    user: safeUser,
+    token,
+  };
+}
+
+export async function demoLogin() {
+  const user = await prisma.user.findUnique({
+    where: {
+      username: DEMO_USERNAME,
+    },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      passwordHash: true,
+      isOnline: true,
+      lastSeenAt: true,
+      profile: {
+        select: {
+          id: true,
+          displayName: true,
+          bio: true,
+          avatarId: true,
+          avatar: {
+            select: {
+              url: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    throw new Error("Demo user not found");
+  }
+
+  const { passwordHash, ...safeUser } = user;
+
+  const token = jwt.sign(
+    { userId: user.id },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
 
   return {
     user: safeUser,

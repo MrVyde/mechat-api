@@ -44,6 +44,27 @@ export async function login(req: Request, res: Response) {
   }
 }
 
+export async function demoLogin(req: Request, res: Response ) {
+  try {
+    const result = await authService.demoLogin();
+
+    res.cookie("accessToken", result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({
+      user: result.user,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      message: err.message,
+    });
+  }
+}
+
 export async function me(req: Request, res: Response) {
   try {
     const userId = req.user?.userId;
