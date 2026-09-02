@@ -6,12 +6,13 @@ import authRoutes from "./routes/auth.routes";
 import messageRoutes from "./routes/message.routes";
 import conversationRoutes from "./routes/conversation.routes";
 import userRoutes from "./routes/user.routes";
+import { FRONTEND_URL, } from "./config/env";
 
 const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: FRONTEND_URL,
     credentials: true,
   })
 );
