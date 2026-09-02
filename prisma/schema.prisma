@@ -1,23 +1,150 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  schemas = ["mechat_api"]
+  schemas  = ["mechat_api"]
 }
 
+model User {
+  id           String                    @id @default(cuid())
+  email        String                    @unique
+  username     String                    @unique
+  passwordHash String
+  isOnline     Boolean                   @default(false)
+  lastSeenAt   DateTime?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  participants ConversationParticipant[]
+  messages     Message[]
+  reactions    MessageReaction[]
+  readReceipts MessageReadReceipt[]
+  profile      Profile?
+
+  @@index([username])
+  @@schema("mechat_api")
+}
+
+model Profile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  displayName String
+  bio         String?
+  avatarId    String?
+  avatar      Media?  @relation("ProfileAvatar", fields: [avatarId], references: [id])
+  user        User    @relation(fields: [userId], references: [id])
+
+  @@schema("mechat_api")
+}
+
+model Media {
+  id                 String         @id @default(cuid())
+  url                String
+  type               MediaType
+  createdAt          DateTime       @default(now())
+  conversationImages Conversation[] @relation("ConversationImage")
+  messageMedia       MessageMedia[]
+  avatars            Profile[]      @relation("ProfileAvatar")
+
+  @@schema("mechat_api")
+}
+
+model Conversation {
+  id           String                    @id @default(cuid())
+  type         ConversationType
+  name         String?
+  description  String?
+  imageId      String?
+  createdAt    DateTime                  @default(now())
+  image        Media?                    @relation("ConversationImage", fields: [imageId], references: [id])
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([type])
+  @@schema("mechat_api")
+}
+
+model ConversationParticipant {
+  id             String          @id @default(cuid())
+  conversationId String
+  userId         String
+  role           ParticipantRole @default(MEMBER)
+  joinedAt       DateTime        @default(now())
+  conversation   Conversation    @relation(fields: [conversationId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+  @@schema("mechat_api")
+}
+
+model Message {
+  id             String               @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String?
+  deleted        Boolean              @default(false)
+  createdAt      DateTime             @default(now())
+  conversation   Conversation         @relation(fields: [conversationId], references: [id])
+  sender         User                 @relation(fields: [senderId], references: [id])
+  media          MessageMedia[]
+  reactions      MessageReaction[]
+  readReceipts   MessageReadReceipt[]
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@schema("mechat_api")
+}
+
+model MessageMedia {
+  id        String  @id @default(cuid())
+  messageId String
+  mediaId   String
+  media     Media   @relation(fields: [mediaId], references: [id])
+  message   Message @relation(fields: [messageId], references: [id])
+
+  @@index([messageId])
+  @@index([mediaId])
+  @@schema("mechat_api")
+}
+
+model MessageReaction {
+  id        String       @id @default(cuid())
+  messageId String
+  userId    String
+  type      ReactionType
+  emoji     String
+  message   Message      @relation(fields: [messageId], references: [id])
+  user      User         @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId, type])
+  @@index([messageId])
+  @@index([userId])
+  @@schema("mechat_api")
+}
+
+model MessageReadReceipt {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+  @@schema("mechat_api")
+}
 
 enum ConversationType {
   DIRECT
   GROUP
 
-    @@schema("mechat_api")
+  @@schema("mechat_api")
 }
 
 enum ParticipantRole {
@@ -25,13 +152,13 @@ enum ParticipantRole {
   ADMIN
   MEMBER
 
-    @@schema("mechat_api")
+  @@schema("mechat_api")
 }
 
 enum MediaType {
   IMAGE
 
-    @@schema("mechat_api")
+  @@schema("mechat_api")
 }
 
 enum ReactionType {
@@ -41,204 +168,5 @@ enum ReactionType {
   FIRE
   THUMBS_UP
 
-    @@schema("mechat_api")
-}
-
-model User {
-  id           String   @id @default(cuid())
-
-  email        String   @unique
-  username     String   @unique
-  passwordHash String
-
-  isOnline     Boolean  @default(false)
-  lastSeenAt   DateTime?
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  profile      Profile?
-
-  participants ConversationParticipant[]
-
-  messages     Message[]
-
-  reactions    MessageReaction[]
-
-  readReceipts MessageReadReceipt[]
-
-  @@index([username])
-
-    @@schema("mechat_api")
-}
-
-model Profile {
-  id          String @id @default(cuid())
-
-  userId      String @unique
-
-  displayName String
-  bio         String?
-
-  avatarId    String?
-
-  user        User   @relation(fields: [userId], references: [id])
-
-  avatar      Media? @relation("ProfileAvatar", fields: [avatarId], references: [id])
-
-    @@schema("mechat_api")
-}
-
-model Media {
-  id         String    @id @default(cuid())
-
-  url        String
-
-  type       MediaType
-
-  createdAt  DateTime  @default(now())
-
-  avatars    Profile[] @relation("ProfileAvatar")
-
-  messageMedia MessageMedia[]
-  conversationImages Conversation[] @relation("ConversationImage")
-
-    @@schema("mechat_api")
-}
-
-model Conversation {
-  id            String @id @default(cuid())
-
-  type          ConversationType
-
-  name          String?
-  description   String?
-
-  imageId       String?
-
-  image         Media? @relation("ConversationImage", fields: [imageId], references: [id])
-
-
-  participants  ConversationParticipant[]
-
-  messages      Message[]
-
-  createdAt     DateTime @default(now())
-
-  @@index([type])
-
-    @@schema("mechat_api")
-}
-
-model ConversationParticipant {
-  id              String @id @default(cuid())
-
-  conversationId  String
-  userId          String
-
-  role            ParticipantRole @default(MEMBER)
-
-  joinedAt        DateTime @default(now())
-
-  conversation    Conversation @relation(fields: [conversationId], references: [id])
-
-  user            User @relation(fields: [userId], references: [id])
-
-  @@unique([conversationId, userId])
-
-  @@index([userId])
-  @@index([conversationId])
-
-    @@schema("mechat_api")
-}
-
-model Message {
-  id              String @id @default(cuid())
-
-  conversationId  String
-
-  senderId        String
-
-  content         String?
-
-  deleted         Boolean @default(false)
-
-  createdAt       DateTime @default(now())
-
-  conversation    Conversation @relation(fields: [conversationId], references: [id])
-
-  sender          User @relation(fields: [senderId], references: [id])
-
-  media           MessageMedia[]
-
-  reactions       MessageReaction[]
-
-  readReceipts    MessageReadReceipt[]
-
-  @@index([conversationId])
-  @@index([senderId])
-  @@index([createdAt])
-
-    @@schema("mechat_api")
-}
-
-model MessageMedia {
-  id          String @id @default(cuid())
-
-  messageId   String
-
-  mediaId     String
-
-  message     Message @relation(fields: [messageId], references: [id])
-
-  media       Media @relation(fields: [mediaId], references: [id])
-
-  @@index([messageId])
-  @@index([mediaId])
-
-    @@schema("mechat_api")
-}
-
-model MessageReaction {
-  id          String @id @default(cuid())
-
-  messageId   String
-
-  userId      String
-
-  emoji     String
-
-  type        ReactionType
-
-  message     Message @relation(fields: [messageId], references: [id])
-
-  user        User @relation(fields: [userId], references: [id])
-
-  @@unique([messageId, userId, type])
-
-  @@index([messageId])
-  @@index([userId])
-
-    @@schema("mechat_api")
-}
-
-model MessageReadReceipt {
-  id          String @id @default(cuid())
-
-  messageId   String
-
-  userId      String
-
-  readAt      DateTime @default(now())
-
-  message     Message @relation(fields: [messageId], references: [id])
-
-  user        User @relation(fields: [userId], references: [id])
-
-  @@unique([messageId, userId])
-
-  @@index([messageId])
-  @@index([userId])
-
-    @@schema("mechat_api")
+  @@schema("mechat_api")
 }

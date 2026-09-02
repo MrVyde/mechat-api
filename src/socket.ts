@@ -2,12 +2,16 @@ import { Server } from "socket.io";
 import http from "http";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./config/env";
+import {
+  FRONTEND_URL,
+  FRONTEND_PROD_URL,
+} from "./config/env";
 
 
 export function initSocket(server: http.Server) {
   const io = new Server(server, {
     cors: {
-      origin: "http://localhost:3000", // adjust later for production
+      origin: [FRONTEND_URL, FRONTEND_PROD_URL], // adjust later for production
       methods: ["GET", "POST"],
       credentials: true
     },
