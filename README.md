@@ -7,11 +7,11 @@ A real-time messaging API built with Node.js, Express, TypeScript, Prisma ORM, P
 <https://mechat-api.onrender.com>
 
 ## Project Ecosystem
+```text
 MeChat
 ├── MeChat Frontend
-
 └── MeChat API
-
+```
 
 The frontend provides the user interface, while the API manages application logic, authentication, database operations, and real-time communication.
 
@@ -61,14 +61,12 @@ The current frontend is optimized for medium and large screen sizes, with smalle
 * Architecture
 
 The API follows a layered backend architecture:
-
+```text
 Client
   │
   ├── REST API
-
   │
   └── Socket.IO
-
         │
         ▼
 ┌───────────────────────────┐
@@ -82,78 +80,54 @@ Client
 └─────────────┬─────────────┘
               │
               ▼
-
        ┌──────────────┐
        │ Prisma ORM   │
        └──────┬───────┘
               │
               ▼
-
        ┌──────────────┐
        │ PostgreSQL   │
        └──────────────┘
+```
 
 ## Backend Structure
+```text
 src
-
 ├── config
 │   └── env.ts
-
 ├── controllers
 │   ├── auth.controller.ts
-
 │   ├── conversation.controller.ts
-
 │   ├── message.controller.ts
-
 │   └── user.controller.ts
-
 ├── lib
 │   ├── lib.socket.ts
-
 │   └── prisma.ts
-
 ├── middlewares
 │   ├── auth.middleware.ts
-
 │   ├── auth.validator.ts
-
 │   ├── user.validator.ts
-
 │   └── validate.middleware.ts
 ├── prisma
 │   └── client.ts
-
 ├── routes
 │   ├── auth.routes.ts
-
 │   ├── conversation.routes.ts
-
 │   ├── message.routes.ts
-
 │   └── user.routes.ts
 ├── services
 │   ├── auth.service.ts
-
 │   ├── conversation.service.ts
-
 │   ├── message.service.ts
-
 │   ├── presence.service.ts
-
 │   └── user.service.ts
 ├── types
-
 ├── utils
-
 ├── validators
-
 ├── app.ts
-
 ├── server.ts
-
 └── socket.ts
-
+```
 
 The project separates HTTP routing, controllers, business logic, validation, authentication, database access, and real-time communication into dedicated layers.
 
@@ -174,46 +148,38 @@ Socket.IO is responsible for:
 Authentication is applied to socket connections by validating the JWT stored in the accessToken HTTP-only cookie.
 
 ## Socket Architecture
+```text
 Frontend
     │
-
     │ Socket.IO
     ▼
-
 Socket.IO Server
     │
-
     ├── Authentication
-
     ├── User Rooms
-
     ├── Conversation Rooms
-
     └── Presence Tracking
+```
 
 ## Authentication & Security
 
 Authentication is handled using JSON Web Tokens stored in HTTP-only cookies.
 
-The authentication flow is:
-
+#### The authentication flow is:
+```text
 Login / Registration
-
         │
         ▼
 Generate JWT
-
         │
         ▼
-
 HTTP-only accessToken cookie
         │
         ▼
-        
 Authenticated API requests
+```
 
-
-The backend uses:
+#### The backend uses:
 
 * JWT authentication
 * HTTP-only cookies
@@ -258,36 +224,35 @@ Prisma migrations are stored in the repository and Prisma Client is generated du
 The API is organized into four primary route groups.
 
 ### Authentication
+```text
 POST /api/auth/register
-
 POST /api/auth/login
-
 POST /api/auth/demo
-
 GET  /api/auth/me
-
 POST /api/auth/logout
+```
 
 Handles registration, authentication, demo access, retrieving the authenticated user, and logout.
 
 ### Conversations
+```text
 GET  /api/conversations
-
 POST /api/conversations
-
+```
 
 Handles conversation retrieval and conversation creation.
 
 ### Messages
+```text 
 GET  /api/messages
-
 POST /api/messages
-
+```
 
 Handles message retrieval and creation.
 
 ### Users
 GET  /api/users
+
 
 Handles user-related operations such as searching for users.
 
@@ -296,16 +261,13 @@ Endpoint details may expand as additional MeChat features are implemented.
 ## Environment Variables
 
 The backend uses environment variables for database credentials, authentication secrets, and frontend origins.
-
+```text
 DATABASE_URL=
-
 JWT_SECRET=
-
 DEMO_USERNAME=
-
 FRONTEND_URL=http://localhost:3000
-
 FRONTEND_PROD_URL=https://me-chat-eta.vercel.app
+```
 
 PORT is not required locally because the server falls back to port 5000:
 
@@ -315,33 +277,36 @@ const PORT = process.env.PORT || 5000;
 Render provides the production port through its environment.
 
 ## Local Development
-
 Clone the repository:
 
 git clone <https://github.com/MrVyde/mechat-api.git>
 
-cd mechat-app
+cd mechat-api
+
 
 Install dependencies:
 
 npm install
 
-Create a .env file in the project root:
 
+Create a .env file in the project root:
+```
 DATABASE_URL=
 JWT_SECRET=
 DEMO_USERNAME=
 FRONTEND_URL=http://localhost:3000
 FRONTEND_PROD_URL=
-
+```
 
 Generate the Prisma client:
 
 npx prisma generate
 
+
 Run the development server:
 
 npm run dev
+
 
 The API will be available at:
 
@@ -349,6 +314,7 @@ http://localhost:5000
 
 ## Available Scripts
 npm run dev
+
 
 Starts the development server using Nodemon and TSX.
 
