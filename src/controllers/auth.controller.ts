@@ -1,13 +1,17 @@
 import { Request, Response } from "express";
 import * as authService from "../services/auth.service";
 
+
+
+const isProduction = process.env.NODE_ENV === "production";
+
 export async function register(req: Request, res: Response) {
   try {
     const result = await authService.register(req.body);
     res.cookie("accessToken", result.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -28,8 +32,8 @@ export async function login(req: Request, res: Response) {
 
     res.cookie("accessToken", result.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -50,8 +54,8 @@ export async function demoLogin(req: Request, res: Response ) {
 
     res.cookie("accessToken", result.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -82,11 +86,13 @@ export async function me(req: Request, res: Response) {
 }
 
 export async function logout(req: Request, res: Response) {
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  });
 
-    res.clearCookie("accessToken");
-
-    return res.json({
-        message: "Logged out",
-    });
-
+  return res.json({
+    message: "Logged out",
+  });
 }
