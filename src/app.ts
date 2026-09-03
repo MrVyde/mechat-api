@@ -6,16 +6,21 @@ import authRoutes from "./routes/auth.routes";
 import messageRoutes from "./routes/message.routes";
 import conversationRoutes from "./routes/conversation.routes";
 import userRoutes from "./routes/user.routes";
-import { FRONTEND_URL, } from "./config/env";
+import { FRONTEND_URL, FRONTEND_PROD_URL } from "./config/env";
 
 const app = express();
 
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: [FRONTEND_URL, FRONTEND_PROD_URL ],
     credentials: true,
   })
 );
+
+console.log("CORS origins:", {
+  frontend: FRONTEND_URL,
+  production: FRONTEND_PROD_URL,
+});
 
 app.use(express.json());
 
