@@ -9,6 +9,7 @@ A real-time messaging API built with Node.js, Express, TypeScript, Prisma ORM, P
 ## Project Ecosystem
 MeChat
 ├── MeChat Frontend
+
 └── MeChat API
 
 
@@ -64,8 +65,10 @@ The API follows a layered backend architecture:
 Client
   │
   ├── REST API
+
   │
   └── Socket.IO
+
         │
         ▼
 ┌───────────────────────────┐
@@ -79,50 +82,76 @@ Client
 └─────────────┬─────────────┘
               │
               ▼
+
        ┌──────────────┐
        │ Prisma ORM   │
        └──────┬───────┘
               │
               ▼
+
        ┌──────────────┐
        │ PostgreSQL   │
        └──────────────┘
 
 ## Backend Structure
 src
+
 ├── config
 │   └── env.ts
+
 ├── controllers
 │   ├── auth.controller.ts
+
 │   ├── conversation.controller.ts
+
 │   ├── message.controller.ts
+
 │   └── user.controller.ts
+
 ├── lib
 │   ├── lib.socket.ts
+
 │   └── prisma.ts
+
 ├── middlewares
 │   ├── auth.middleware.ts
+
 │   ├── auth.validator.ts
+
 │   ├── user.validator.ts
+
 │   └── validate.middleware.ts
 ├── prisma
 │   └── client.ts
+
 ├── routes
 │   ├── auth.routes.ts
+
 │   ├── conversation.routes.ts
+
 │   ├── message.routes.ts
+
 │   └── user.routes.ts
 ├── services
 │   ├── auth.service.ts
+
 │   ├── conversation.service.ts
+
 │   ├── message.service.ts
+
 │   ├── presence.service.ts
+
 │   └── user.service.ts
 ├── types
+
 ├── utils
+
 ├── validators
+
 ├── app.ts
+
 ├── server.ts
+
 └── socket.ts
 
 
@@ -147,13 +176,19 @@ Authentication is applied to socket connections by validating the JWT stored in 
 ## Socket Architecture
 Frontend
     │
+
     │ Socket.IO
     ▼
+
 Socket.IO Server
     │
+
     ├── Authentication
+
     ├── User Rooms
+
     ├── Conversation Rooms
+
     └── Presence Tracking
 
 ## Authentication & Security
@@ -163,14 +198,18 @@ Authentication is handled using JSON Web Tokens stored in HTTP-only cookies.
 The authentication flow is:
 
 Login / Registration
+
         │
         ▼
 Generate JWT
+
         │
         ▼
+
 HTTP-only accessToken cookie
         │
         ▼
+        
 Authenticated API requests
 
 
@@ -220,15 +259,20 @@ The API is organized into four primary route groups.
 
 ### Authentication
 POST /api/auth/register
+
 POST /api/auth/login
+
 POST /api/auth/demo
+
 GET  /api/auth/me
+
 POST /api/auth/logout
 
 Handles registration, authentication, demo access, retrieving the authenticated user, and logout.
 
 ### Conversations
 GET  /api/conversations
+
 POST /api/conversations
 
 
@@ -236,6 +280,7 @@ Handles conversation retrieval and conversation creation.
 
 ### Messages
 GET  /api/messages
+
 POST /api/messages
 
 
@@ -253,9 +298,13 @@ Endpoint details may expand as additional MeChat features are implemented.
 The backend uses environment variables for database credentials, authentication secrets, and frontend origins.
 
 DATABASE_URL=
+
 JWT_SECRET=
+
 DEMO_USERNAME=
+
 FRONTEND_URL=http://localhost:3000
+
 FRONTEND_PROD_URL=https://me-chat-eta.vercel.app
 
 PORT is not required locally because the server falls back to port 5000:
@@ -270,7 +319,8 @@ Render provides the production port through its environment.
 Clone the repository:
 
 git clone <https://github.com/MrVyde/mechat-api.git>
-cd mechat-ap
+
+cd mechat-app
 
 Install dependencies:
 
